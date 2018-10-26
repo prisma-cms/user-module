@@ -1,4 +1,3 @@
-import chalk from "chalk";
 
 import {
   deploy,
@@ -11,6 +10,6 @@ try {
   deploy(generateSchema)
 }
 catch (error) {
-  console.error(chalk.red("error"), error);
+  console.error("error", error);
 };
 

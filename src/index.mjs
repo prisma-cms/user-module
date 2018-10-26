@@ -1,4 +1,4 @@
 
-import Module from "./modules";
+import PrismaUserModule from "./modules";
 
-export default Module
+export default PrismaUserModule

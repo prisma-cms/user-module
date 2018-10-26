@@ -1,43 +1,67 @@
 {
-  "name": "@prisma-cms/module-bilerplate",
-  "description": "Module boilerplate for @prisma-cms/server",
+  "name": "@prisma-cms/user-module",
+  "description": "User module for @prisma-cms/server",
   "version": "1.0.0-beta",
-  "main": "src/",
+  "main": "lib/module.js",
+  "module": "es/module.js",
   "files": [
-    "src"
+    "src",
+    "es",
+    "lib",
+    "umd"
   ],
   "scripts": {
+    "build": "nwb build-web-module",
+    "clean": "nwb clean-module",
+    "prepublishOnly": "npm run build",
     "start": "action=start-server node --experimental-modules src/server",
+    "start-dev": "action=start-server nodemon --experimental-modules src/server",
     "deploy": "NODE_ENV=test node --experimental-modules src/server/scripts/deploy/with-prisma",
-    "build-api": "node --experimental-modules src/server/scripts/deploy/api-only"
+    "build-api": "node --experimental-modules src/server/scripts/deploy/api-only",
+    "test": "react-scripts test"
   },
   "dependencies": {
     "@prisma-cms/prisma-module": "^1.1.0-beta",
-    "merge-graphql-schemas": "^1.5.7",
-    "chalk": "^2.4.1"
+    "blob-to-stream": "^1.0.3",
+    "graphql": "^14.0.2",
+    "graphql-tag": "2.10.0",
+    "react": "^16.6.0",
+    "react-apollo": "^2.2.3",
+    "react-dom": "^16.6.0",
+    "sharp": "0.21.0",
+    "shortid": "^2.2.13"
   },
   "devDependencies": {
-    "@prisma-cms/server": "^2.1.4-beta"
-  },
-  "resolutions": {
-    "graphql": "14.0.2"
+    "@babel/core": "^7.1.2",
+    "@babel/plugin-proposal-class-properties": "^7.1.0",
+    "@babel/polyfill": "^7.0.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/preset-react": "^7.0.0",
+    "@babel/register": "^7.0.0",
+    "@prisma-cms/server": "^2.1.1-beta",
+    "babel-preset-es2015": "^6.24.1",
+    "node-loader": "^0.6.0",
+    "nwb": "0.23.x",
+    "react-scripts": "^2.0.5"
   },
   "author": "Fi1osof",
   "license": "MIT",
   "directories": {
-    "src": "src"
+    "lib": "lib"
   },
   "keywords": [
-    "prisma-cms",
+    "prisma",
+    "cms",
     "server",
-    "boilerplate"
+    "upload",
+    "files"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/prisma-cms/module-boilerplate.git"
+    "url": "git+https://github.com/prisma-cms/upload-module.git"
   },
   "bugs": {
-    "url": "https://github.com/prisma-cms/module-boilerplate/issues"
+    "url": "https://github.com/prisma-cms/upload-module/issues"
   },
-  "homepage": "https://github.com/prisma-cms/module-boilerplate#readme"
+  "homepage": "https://github.com/prisma-cms/upload-module#readme"
 }

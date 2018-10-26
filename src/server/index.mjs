@@ -1,10 +1,10 @@
 
 import startServer from "@prisma-cms/server";
 
-import Module from "../";
+import PrismaUserModule from "../";
 
 
-const module = new Module({
+const module = new PrismaUserModule({
 });
 
 const resolvers = module.getResolvers();

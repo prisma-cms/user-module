@@ -22,7 +22,7 @@ export const generateSchema = function (schemaType) {
   }
   catch (error) {
 
-    console.error(chalk.red("generateSchema Error"), error);
+    console.log(chalk.red("generateSchema Error"), error);
   }
 
   return result;

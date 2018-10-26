@@ -1,0 +1,7 @@
+
+
+type Error {
+  key: String!
+  message: String!
+}
+

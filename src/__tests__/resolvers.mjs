@@ -14,6 +14,7 @@ const {
   },
 } = resolvers;
 
+// console.log("resolvers", resolvers);
 
 describe("Resolvers", () => {
 

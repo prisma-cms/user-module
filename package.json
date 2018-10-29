@@ -1,7 +1,7 @@
 {
   "name": "@prisma-cms/user-module",
   "description": "User module for @prisma-cms/server",
-  "version": "1.1.0-beta",
+  "version": "1.1.1-beta",
   "main": "src/",
   "files": [
     "src"
@@ -16,7 +16,7 @@
     "test": "NODE_OPTIONS=\"--experimental-modules\" yarn mocha --delay src/__tests__/"
   },
   "dependencies": {
-    "@prisma-cms/prisma-module": "^1.1.0-beta",
+    "@prisma-cms/prisma-module": "^1.2.0-beta",
     "bcryptjs": "^2.4.3",
     "chalk": "^2.4.1",
     "isemail": "^3.2.0",
@@ -24,10 +24,10 @@
   },
   "devDependencies": {
     "@prisma-cms/prisma-module": "^1.2.0-beta",
-    "@prisma-cms/server": "^2.1.6-beta",
+    "@prisma-cms/server": "^2.1.8-beta",
     "chalk": "^2.4.1",
-    "merge-graphql-schemas": "^1.5.7",
     "expect": "^23.6.0",
+    "merge-graphql-schemas": "^1.5.7",
     "mocha": "^5.2.0"
   },
   "resolutions": {

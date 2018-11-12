@@ -1,7 +1,7 @@
 {
   "name": "@prisma-cms/user-module",
   "description": "User module for @prisma-cms/server",
-  "version": "1.1.2-beta",
+  "version": "1.1.3-beta",
   "main": "src/",
   "files": [
     "src"
@@ -17,7 +17,6 @@
     "test": "NODE_OPTIONS=\"--experimental-modules\" yarn mocha --delay src/__tests__/"
   },
   "dependencies": {
-    "@prisma-cms/server": "^2.1.8-beta",
     "@prisma-cms/prisma-module": "latest",
     "merge-graphql-schemas": "latest",
     "bcryptjs": "^2.4.3",

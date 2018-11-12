@@ -26,7 +26,7 @@ const { createWriteStream, unlinkSync } = fs;
 
 const { fileLoader, mergeTypes } = MergeSchema
 
-const cleanUpPhone = function (phone) {
+export const cleanUpPhone = function (phone) {
 
   if (phone) {
 
@@ -46,7 +46,7 @@ const cleanUpPhone = function (phone) {
 }
 
 
-const createPassword = async (password) => {
+export const createPassword = async (password) => {
 
   if (!password) {
     throw (new Error("Пароль не может быть пустым"));
@@ -56,7 +56,7 @@ const createPassword = async (password) => {
 }
 
 
-class UserPayload extends Processor {
+export class UserPayload extends Processor {
  
 
   constructor(ctx) {
@@ -577,7 +577,7 @@ const updateUserProcessor = async function (source, args, ctx, info) {
  * 
  * ToDo сделать отправку сообщений через смс
  */
-const resetPassword = async function (source, args, ctx, info) {
+export const resetPassword = async function (source, args, ctx, info) {
 
   const {
     db,

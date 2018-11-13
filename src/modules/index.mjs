@@ -9,7 +9,7 @@ import PrismaModule from "@prisma-cms/prisma-module";
 import isemail from "isemail";
 
 import bcrypt from "bcryptjs";
- 
+
 import jwt from "jsonwebtoken";
 
 import MergeSchema from 'merge-graphql-schemas';
@@ -57,7 +57,7 @@ export const createPassword = async (password) => {
 
 
 export class UserPayload extends Processor {
- 
+
 
   constructor(ctx) {
 
@@ -561,7 +561,20 @@ const user = async function (parent, args, ctx, info) {
 
 const me = async function (parent, args, ctx, info) {
 
-  return ctx.currentUser;
+  const {
+    currentUser,
+    db,
+  } = ctx;
+
+  const {
+    id: currentUserId,
+  } = currentUser || {};
+
+  return currentUserId ? db.query.user({
+    where: {
+      id: currentUserId,
+    }
+  }, info) : null;
 }
 
 const updateUserProcessor = async function (source, args, ctx, info) {

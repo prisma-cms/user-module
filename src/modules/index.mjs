@@ -647,6 +647,7 @@ export const resetPassword = async function (source, args, ctx, info) {
           Пароль: ${password}
         </p>
       `,
+      rank: 1000,
     },
   });
 

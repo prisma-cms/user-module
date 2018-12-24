@@ -1,3 +1,7 @@
+1.1.6
+===============================
+- getApiSchema() now get prisma schema from current module dir only
+
 1.1.5
 ===============================
 - Added letter rank
@@ -9,6 +13,14 @@
 1.1.3
 ===============================
 - Added exports
+
+1.1.4
+===============================
+- getApiSchema() now get prisma schema from current module dir only
+
+1.1.3
+===============================
+- Move tests
 
 1.1.2
 ===============================

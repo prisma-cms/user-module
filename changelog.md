@@ -1,3 +1,7 @@
+1.1.7
+===============================
+- Remove User::sudo
+
 1.1.6
 ===============================
 - getApiSchema() now get prisma schema from current module dir only

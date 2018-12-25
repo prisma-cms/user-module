@@ -17,7 +17,7 @@ type User{
 
   # files: [File!]! @relation(name: "UserFiles")
 
-  sudo: Boolean @default(value: false)
+  # sudo: Boolean @default(value: false)
   active: Boolean @default(value: true)
 
   """

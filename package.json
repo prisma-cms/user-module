@@ -30,7 +30,7 @@
     "expect": "^23.6.0",
     "graphql": "*",
     "mocha": "^5.2.0",
-    "nodemon": "^1.18.5"
+    "nodemon": "latest"
   },
   "resolutions": {
     "graphql": "*"

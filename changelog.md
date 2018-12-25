@@ -18,14 +18,6 @@
 ===============================
 - Added exports
 
-1.1.4
-===============================
-- getApiSchema() now get prisma schema from current module dir only
-
-1.1.3
-===============================
-- Move tests
-
 1.1.2
 ===============================
 - Upgrade dependencies

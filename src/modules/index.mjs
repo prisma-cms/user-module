@@ -5,6 +5,7 @@ import Processor from "@prisma-cms/prisma-processor";
 import shortid from "shortid";
 
 import PrismaModule from "@prisma-cms/prisma-module";
+import UploadModule from "@prisma-cms/upload-module";
 
 import isemail from "isemail";
 
@@ -778,6 +779,16 @@ const userGroups = function (source, args, ctx, info) {
 
 export default class PrismaUserModule extends PrismaModule {
 
+
+  constructor(options){
+
+    super(options);
+
+    this.mergeModules([
+      UploadModule,
+    ]);
+
+  }
 
 
   getSchema(types = []) {

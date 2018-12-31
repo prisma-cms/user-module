@@ -1,7 +1,7 @@
 {
   "name": "@prisma-cms/user-module",
   "description": "User module for @prisma-cms/server",
-  "version": "1.1.7",
+  "version": "1.2.0",
   "main": "src/",
   "files": [
     "src"
@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@prisma-cms/prisma-module": "latest",
+    "@prisma-cms/upload-module": "latest",
     "merge-graphql-schemas": "latest",
     "bcryptjs": "^2.4.3",
     "chalk": "^2.4.1",

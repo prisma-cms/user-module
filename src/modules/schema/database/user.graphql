@@ -33,7 +33,7 @@ type User{
   CreatedBy: User @relation(name: "UserCreatedBy", onDelete: SET_NULL) 
 
   LogedIns: [LogedIn!]! @relation (name: "UserLogedIn")
-  
+  Files: [File!]! @relation(name: "UserFiles")
 }
  
 

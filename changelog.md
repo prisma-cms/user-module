@@ -1,3 +1,8 @@
+1.2.0
+===============================
+- Added @prisma-cms/upload-module
+- Added User::Files
+
 1.1.7
 ===============================
 - Remove User::sudo

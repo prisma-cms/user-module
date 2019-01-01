@@ -1,7 +1,7 @@
 {
   "name": "@prisma-cms/user-module",
   "description": "User module for @prisma-cms/server",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "main": "src/",
   "files": [
     "src"

@@ -1,3 +1,7 @@
+1.2.2
+===============================
+- Fix default args query
+
 1.2.1
 ===============================
 - Added subscription user

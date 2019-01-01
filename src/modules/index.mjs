@@ -547,16 +547,14 @@ const usersConnection = async function (parent, args, ctx, info) {
 
 const users = function (parent, args, ctx, info) {
 
-  return ctx.db.query.users({}, info);
+  return ctx.db.query.users(args, info);
 
 }
 
 const user = async function (parent, args, ctx, info) {
 
 
-  return ctx.db.query.user({
-
-  }, info);
+  return ctx.db.query.user(args, info);
 }
 
 

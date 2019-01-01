@@ -780,7 +780,7 @@ const userGroups = function (source, args, ctx, info) {
 export default class PrismaUserModule extends PrismaModule {
 
 
-  constructor(options){
+  constructor(options) {
 
     super(options);
 
@@ -842,34 +842,43 @@ export default class PrismaUserModule extends PrismaModule {
     const resolvers = super.getResolvers();
 
 
-    Object.assign(resolvers.Query, {
-      users,
-      usersConnection,
-      user,
-      me,
-      userGroups,
-    });
+    const {
+      Query,
+      Mutation,
+      Subscription,
+      ...other
+    } = resolvers || {}
 
 
-    Object.assign(resolvers.Mutation, {
-      signin,
-      signup,
-      createUserProcessor,
-      updateUserProcessor,
-      resetPassword,
-    });
-
-
-
-
-    Object.assign(resolvers, {
+    return {
+      Query: {
+        ...Query,
+        users,
+        usersConnection,
+        user,
+        me,
+        userGroups,
+      },
+      Mutation: {
+        ...Mutation,
+        signin,
+        signup,
+        createUserProcessor,
+        updateUserProcessor,
+        resetPassword,
+      },
+      Subscription: {
+        user: {
+          subscribe: (source, args, ctx, info) => {
+            return ctx.db.subscription.user(args, info);
+          },
+        },
+      },
+      ...other,
       UserResponse: userPayloadData,
       AuthPayload: userPayloadData,
       User,
-    });
-
-
-    return resolvers;
+    };
   }
 
 

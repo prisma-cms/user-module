@@ -1,3 +1,7 @@
+1.2.1
+===============================
+- Added subscription user
+
 1.2.0
 ===============================
 - Added @prisma-cms/upload-module

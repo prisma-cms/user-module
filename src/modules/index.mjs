@@ -19,6 +19,8 @@ import path from 'path';
 
 import fs from 'fs';
 
+import ResetPasswordModule from "./resetPassword";
+
 const moduleURL = new URL(import.meta.url);
 
 const __dirname = path.dirname(moduleURL.pathname);
@@ -486,6 +488,86 @@ export class UserPayload extends Processor {
 
   }
 
+
+  async resetPasswordWithResponse(objectType, args, info) {
+
+    this.data = await this.resetPassword(objectType, args, info);
+
+
+    return this.prepareResponse();
+  }
+
+  async resetPassword(objectType, args, info) {
+
+    const {
+      db,
+    } = ctx;
+
+    const {
+      where,
+    } = args;
+
+
+    const user = await db.query.user({
+      where,
+    })
+      ;
+
+
+    if (!user) {
+      throw (new Error("Не был получен пользователь"));
+    }
+
+
+    const {
+      id,
+      email,
+    } = user;
+
+    if (!email) {
+      throw (new Error("У пользователя не указан емейл"));
+    }
+
+
+    const password = shortid.generate();
+    const passwordHash = await createPassword(password);
+
+    const result = await db.mutation.updateUser({
+      where: {
+        id,
+      },
+      data: {
+        password: passwordHash,
+      },
+    });
+
+    // Создаем новое сообщение
+    db.mutation.createLetter({
+      data: {
+        email,
+        subject: "Новый пароль",
+        message: `<h3>Ваш новый пароль</h3>
+          <p>
+            Логин: ${email}
+          </p>
+          <p>
+            Пароль: ${password}
+          </p>
+        `,
+        rank: 1000,
+      },
+    });
+
+
+    if (result) {
+    }
+    else {
+      throw (new Error("Ошибка сброса пароля"));
+    }
+
+    return true;
+  }
+
 }
 
 
@@ -582,6 +664,7 @@ const updateUserProcessor = async function (source, args, ctx, info) {
 }
 
 
+
 /**
  * Сброс пароля.
  * Так как у пользователей может не быть указан емейл,
@@ -589,76 +672,76 @@ const updateUserProcessor = async function (source, args, ctx, info) {
  * 
  * ToDo сделать отправку сообщений через смс
  */
-export const resetPassword = async function (source, args, ctx, info) {
+// export const resetPassword = async function (source, args, ctx, info) {
 
-  const {
-    db,
-  } = ctx;
+//   const {
+//     db,
+//   } = ctx;
 
-  const {
-    where,
-  } = args;
-
-
-  const user = await db.query.user({
-    where,
-  })
-    ;
+//   const {
+//     where,
+//   } = args;
 
 
-  if (!user) {
-    throw (new Error("Не был получен пользователь"));
-  }
+//   const user = await db.query.user({
+//     where,
+//   })
+//     ;
 
 
-  const {
-    id,
-    email,
-  } = user;
-
-  if (!email) {
-    throw (new Error("У пользователя не указан емейл"));
-  }
+//   if (!user) {
+//     throw (new Error("Не был получен пользователь"));
+//   }
 
 
-  const password = shortid.generate();
-  const passwordHash = await createPassword(password);
+//   const {
+//     id,
+//     email,
+//   } = user;
 
-  const result = await db.mutation.updateUser({
-    where: {
-      id,
-    },
-    data: {
-      password: passwordHash,
-    },
-  });
-
-  // Создаем новое сообщение
-  db.mutation.createLetter({
-    data: {
-      email,
-      subject: "Новый пароль",
-      message: `<h3>Ваш новый пароль</h3>
-        <p>
-          Логин: ${email}
-        </p>
-        <p>
-          Пароль: ${password}
-        </p>
-      `,
-      rank: 1000,
-    },
-  });
+//   if (!email) {
+//     throw (new Error("У пользователя не указан емейл"));
+//   }
 
 
-  if (result) {
-  }
-  else {
-    throw (new Error("Ошибка сброса пароля"));
-  }
+//   const password = shortid.generate();
+//   const passwordHash = await createPassword(password);
 
-  return true;
-}
+//   const result = await db.mutation.updateUser({
+//     where: {
+//       id,
+//     },
+//     data: {
+//       password: passwordHash,
+//     },
+//   });
+
+//   // Создаем новое сообщение
+//   db.mutation.createLetter({
+//     data: {
+//       email,
+//       subject: "Новый пароль",
+//       message: `<h3>Ваш новый пароль</h3>
+//         <p>
+//           Логин: ${email}
+//         </p>
+//         <p>
+//           Пароль: ${password}
+//         </p>
+//       `,
+//       rank: 1000,
+//     },
+//   });
+
+
+//   if (result) {
+//   }
+//   else {
+//     throw (new Error("Ошибка сброса пароля"));
+//   }
+
+//   return true;
+// }
 
 const createUserProcessor = async function (source, args, ctx, info) {
 
@@ -784,6 +867,7 @@ export default class PrismaUserModule extends PrismaModule {
 
     this.mergeModules([
       UploadModule,
+      ResetPasswordModule,
     ]);
 
   }
@@ -863,7 +947,7 @@ export default class PrismaUserModule extends PrismaModule {
         signup,
         createUserProcessor,
         updateUserProcessor,
-        resetPassword,
+        // resetPassword,
       },
       Subscription: {
         user: {

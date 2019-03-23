@@ -26,5 +26,9 @@ type Mutation {
     where: UserWhereUniqueInput!
   ): Boolean!
 
+  createResetPasswordProcessor(
+    data: ResetPasswordCreateInput!
+  ): ResetPasswordResponse!
+
 }
 

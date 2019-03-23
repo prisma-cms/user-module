@@ -19,11 +19,12 @@
   "dependencies": {
     "@prisma-cms/prisma-module": "latest",
     "@prisma-cms/upload-module": "latest",
-    "merge-graphql-schemas": "latest",
     "bcryptjs": "^2.4.3",
     "chalk": "^2.4.1",
-    "isemail": "^3.2.0",
     "expect": "^23.6.0",
+    "generate-password": "^1.4.1",
+    "isemail": "^3.2.0",
+    "merge-graphql-schemas": "latest",
     "mocha": "^5.2.0"
   },
   "devDependencies": {

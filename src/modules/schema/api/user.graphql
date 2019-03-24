@@ -17,3 +17,11 @@ type AuthPayload {
 	token: String
 	data: User
 }
+
+input SigninDataInput {
+	password: String!
+}
+
+input UserWhereInput {
+	search: String
+}

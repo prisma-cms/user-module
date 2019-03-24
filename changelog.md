@@ -1,3 +1,10 @@
+1.3.0
+===============================
+- Added users::prepareSearch()
+- Added ResetPassword
+- Added @prisma-cms/mail-module
+- Added @prisma-cms/sms-module
+
 1.2.2
 ===============================
 - Fix default args query

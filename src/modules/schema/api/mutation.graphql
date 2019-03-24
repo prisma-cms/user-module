@@ -9,8 +9,8 @@ type Mutation {
 
 
   signin(
-    where: UserWhereUniqueInput!, 
-    password: String!
+    where: UserWhereUniqueInput!
+    data: SigninDataInput!
   ): AuthPayload!
 
   createUserProcessor(
@@ -22,9 +22,10 @@ type Mutation {
     data: UserUpdateInput!
   ): UserResponse!
 
-  resetPassword(
+  resetPasswordProcessor(
+    data: ResetPasswordInput!
     where: UserWhereUniqueInput!
-  ): Boolean!
+  ): AuthPayload!
 
   createResetPasswordProcessor(
     data: ResetPasswordCreateInput!

@@ -6,6 +6,8 @@ import shortid from "shortid";
 
 import PrismaModule from "@prisma-cms/prisma-module";
 import UploadModule from "@prisma-cms/upload-module";
+import MailModule from "@prisma-cms/mail-module";
+import SmsModule from "@prisma-cms/sms-module";
 
 import isemail from "isemail";
 
@@ -14,6 +16,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 import MergeSchema from 'merge-graphql-schemas';
+
+import chalk from 'chalk';
 
 import path from 'path';
 
@@ -33,15 +37,29 @@ export const cleanUpPhone = function (phone) {
 
   if (phone) {
 
-    phone = phone.trim().replace(/[^0-9]/g, '');
+    const hasPlus = phone[0] === "+";
+
+    phone = phone.trim().replace(/[\+\(\)\[\]\-\# ]/g, '');
 
     if (!phone) {
       phone = undefined;
     }
+    else {
 
-    else if (phone.length === 10) {
-      phone = '7' + phone;
+      if (!hasPlus) {
+
+        if (phone.length === 10) {
+          phone = '7' + phone;
+        }
+
+        // else if (phone.length === 11 && phone[0] === "8") {
+        else if (phone[0] === "8") {
+          phone = phone.replace(/^.{1}/, '7')
+        }
+
+      }
     }
+
 
   }
 
@@ -59,7 +77,7 @@ export const createPassword = async (password) => {
 }
 
 
-export class UserPayload extends Processor {
+export class UserProcessor extends Processor {
 
 
   constructor(ctx) {
@@ -70,12 +88,23 @@ export class UserPayload extends Processor {
 
   }
 
-  async signin(source, args, ctx, info) {
 
+  async createPassword(password) {
+    return await createPassword(password);
+  }
+
+
+  async signin(args, info) {
+
+    const {
+      ctx,
+    } = this;
 
     const {
       where,
-      password,
+      data: {
+        password,
+      },
     } = args;
 
 
@@ -131,7 +160,7 @@ export class UserPayload extends Processor {
   }
 
 
-  async signup(method, source, args, ctx, info) {
+  async signup(args, info) {
 
     let {
       data: {
@@ -142,6 +171,10 @@ export class UserPayload extends Processor {
         ...data
       },
     } = args;
+
+    const {
+      ctx,
+    } = this;
 
     const {
       db,
@@ -192,7 +225,7 @@ export class UserPayload extends Processor {
 
     if (!this.hasErrors()) {
 
-      password = await createPassword(password);
+      password = await this.createPassword(password);
 
       await this.mutate("createUser", {
         data: {
@@ -245,13 +278,13 @@ export class UserPayload extends Processor {
   async create(objectType, args, info) {
 
 
-
     const {
       db,
     } = this.ctx;
 
     let {
       data: {
+        sudo,
         username,
         password,
         email,
@@ -489,372 +522,196 @@ export class UserPayload extends Processor {
   }
 
 
-  async resetPasswordWithResponse(objectType, args, info) {
+  async resetPasswordWithResponse(args, info) {
 
-    this.data = await this.resetPassword(objectType, args, info);
+    let {
+      where,
+      data: {
+        code,
+        ...data
+      },
+      ...otherArgs
+    } = args;
 
+
+    /**
+     * Проверяем код
+     */
+    const resetPassword = await this.getResetPasswordCode(args, info);
+
+
+    /**
+     * Если код был получен, сбрасываем пароль пользователя
+     */
+    if (resetPassword) {
+
+      const updatedUser = await this.resetPassword(resetPassword);
+
+      const {
+        password,
+      } = resetPassword;
+
+      /**
+       * Если пользователь был обновлен, авторизовываем пользователя
+       */
+      if (updatedUser) {
+
+        const {
+          id: userId,
+        } = updatedUser;
+
+        return await this.signin({
+          where: {
+            id: userId,
+          },
+          data: {
+            password,
+          },
+        });
+
+      }
+
+    }
 
     return this.prepareResponse();
   }
 
-  async resetPassword(objectType, args, info) {
+
+  async getResetPasswordCode(args, info) {
+
+
+    let {
+      where,
+      data: {
+        code,
+        ...data
+      },
+      ...otherArgs
+    } = args;
+
+    const {
+      ctx: {
+        db,
+      },
+    } = this;
+
+
+    if (!code) {
+      this.addFieldError("code", "Не указан код");
+    }
+    else {
+
+      const query = `{
+        id,
+        code,
+        password,
+        validTill,
+        User {
+          id
+        }
+      }`;
+
+
+      let passwordReset;
+
+      let passwordResets = await db.query.resetPasswords({
+        where: {
+          User: where,
+          code,
+        },
+        first: 1,
+      }, query);
+
+      passwordReset = passwordResets[0];
+
+
+      if (!passwordReset) {
+        this.addFieldError("code", "Неправильный код");
+      }
+      else {
+
+        const {
+          id: passwordResetId,
+          code: passwordResetCode,
+          password,
+          validTill,
+          User: {
+            id: userId,
+          }
+        } = passwordReset;
+
+        if (passwordResetCode !== code) {
+          this.addFieldError("code", "Неправильный код");
+        }
+        else {
+
+          /**
+           * Если все проверки пройдены, сбрасываем пароль и авторизуем пользователя
+           */
+          return passwordReset;
+        }
+
+      }
+
+    }
+
+    return null;
+
+  }
+
+
+  async resetPassword(passwordReset) {
+
+    const {
+      id: passwordResetId,
+      code: passwordResetCode,
+      password,
+      validTill,
+      User: {
+        id: userId,
+      }
+    } = passwordReset;
 
     const {
       db,
-    } = ctx;
-
-    const {
-      where,
-    } = args;
+    } = this.ctx;
 
 
-    const user = await db.query.user({
-      where,
-    })
-      ;
-
-
-    if (!user) {
-      throw (new Error("Не был получен пользователь"));
-    }
-
-
-    const {
-      id,
-      email,
-    } = user;
-
-    if (!email) {
-      throw (new Error("У пользователя не указан емейл"));
-    }
-
-
-    const password = shortid.generate();
-    const passwordHash = await createPassword(password);
-
-    const result = await db.mutation.updateUser({
+    const updatedUser = await db.mutation.updateUser({
       where: {
-        id,
+        id: userId,
       },
       data: {
-        password: passwordHash,
-      },
-    });
-
-    // Создаем новое сообщение
-    db.mutation.createLetter({
-      data: {
-        email,
-        subject: "Новый пароль",
-        message: `<h3>Ваш новый пароль</h3>
-          <p>
-            Логин: ${email}
-          </p>
-          <p>
-            Пароль: ${password}
-          </p>
-        `,
-        rank: 1000,
+        password: await this.createPassword(password),
       },
     });
 
 
-    if (result) {
-    }
-    else {
-      throw (new Error("Ошибка сброса пароля"));
-    }
-
-    return true;
-  }
-
-}
-
-
-
-const signup = async function (source, args, ctx, info) {
-
-  return (new UserPayload(ctx)).signup("userCreate", source, args, ctx, info);
-}
-
-const signin = async function (source, args, ctx, info) {
-
-  return new UserPayload(ctx).signin(source, args, ctx, info);
-}
-
-
-
-const usersConnection = async function (parent, args, ctx, info) {
-
-  let {
-    where: argsWhere,
-  } = args
-
-
-  let {
-    phone,
-    OR,
-    ...where
-  } = argsWhere || {}
-
-  if (phone) {
-
-    phone = cleanUpPhone(phone);
-
-  }
-
-  if (OR) {
-
-    let phoneField = OR.find(n => Object.keys(n).indexOf("phone") !== -1);
-
-
-    if (phoneField && phoneField.phone) {
-      phoneField.phone = cleanUpPhone(phoneField.phone);
-    }
-
-  }
-
-
-  Object.assign(args, {
-    where: {
-      ...where,
-      phone,
-      OR,
-    },
-  });
-
-  return ctx.db.query.usersConnection(args, info);
-
-}
-
-const users = function (parent, args, ctx, info) {
-
-  return ctx.db.query.users(args, info);
-
-}
-
-const user = async function (parent, args, ctx, info) {
-
-
-  return ctx.db.query.user(args, info);
-}
-
-
-const me = async function (parent, args, ctx, info) {
-
-  const {
-    currentUser,
-    db,
-  } = ctx;
-
-  const {
-    id: currentUserId,
-  } = currentUser || {};
-
-  return currentUserId ? db.query.user({
-    where: {
-      id: currentUserId,
-    }
-  }, info) : null;
-}
-
-const updateUserProcessor = async function (source, args, ctx, info) {
-
-  return new UserPayload(ctx).updateWithResponse("User", args, info);
-}
-
-
-
-/**
- * Сброс пароля.
- * Так как у пользователей может не быть указан емейл,
- * то пароль сбрасываем только при наличии емейла.
- * 
- * ToDo сделать отправку сообщений через смс
- */
-// export const resetPassword = async function (source, args, ctx, info) {
-
-//   const {
-//     db,
-//   } = ctx;
-
-//   const {
-//     where,
-//   } = args;
-
-
-//   const user = await db.query.user({
-//     where,
-//   })
-//     ;
-
-
-//   if (!user) {
-//     throw (new Error("Не был получен пользователь"));
-//   }
-
-
-//   const {
-//     id,
-//     email,
-//   } = user;
-
-//   if (!email) {
-//     throw (new Error("У пользователя не указан емейл"));
-//   }
-
-
-//   const password = shortid.generate();
-//   const passwordHash = await createPassword(password);
-
-//   const result = await db.mutation.updateUser({
-//     where: {
-//       id,
-//     },
-//     data: {
-//       password: passwordHash,
-//     },
-//   });
-
-//   // Создаем новое сообщение
-//   db.mutation.createLetter({
-//     data: {
-//       email,
-//       subject: "Новый пароль",
-//       message: `<h3>Ваш новый пароль</h3>
-//         <p>
-//           Логин: ${email}
-//         </p>
-//         <p>
-//           Пароль: ${password}
-//         </p>
-//       `,
-//       rank: 1000,
-//     },
-//   });
-
-
-//   if (result) {
-//   }
-//   else {
-//     throw (new Error("Ошибка сброса пароля"));
-//   }
-
-//   return true;
-// }
-
-const createUserProcessor = async function (source, args, ctx, info) {
-
-  return new UserPayload(ctx).createWithResponse("User", args, info);
-}
-
-
-const userPayloadData = {
-  data: (source, args, ctx, info) => {
-
-    const {
-      id,
-    } = source.data || {};
-
-    return id ? ctx.db.query.user({
+    /**
+     * Если пользователь был обновлен, удаляем запись сброса пароля.
+     * Ошибку специально не обрабатываем, чтобы пользователь не был автоматически обновлен 
+     * и запросил новый пароль.
+     */
+    await db.mutation.deleteManyResetPasswords({
       where: {
-        id,
+        // id: passwordResetId,
+        User: {
+          id: userId,
+        },
       },
-    }, info) : null;
+    });
+
+    return updatedUser;
+
   }
+
+}
+
+export {
+  UserProcessor as UserPayload,
 }
 
 
-const User = {
-
-  LogedIns: (source, args, ctx, info) => {
-
-
-    const {
-      LogedIns,
-    } = source;
-
-    const {
-      sudo,
-    } = ctx.currentUser || {};
-
-
-    return sudo ? LogedIns : [];
-
-  },
-
-  email: (source, args, ctx, info) => {
-
-    const {
-      id,
-      email,
-      showEmail,
-    } = source;
-
-    const {
-      id: currentUserId,
-      sudo,
-    } = ctx.currentUser || {};
-
-    return (id === currentUserId) || showEmail || sudo ? email : null;
-
-  },
-
-  phone: (source, args, ctx, info) => {
-
-    const {
-      id,
-      phone,
-      showPhone,
-    } = source;
-
-    const {
-      id: currentUserId,
-      sudo,
-    } = ctx.currentUser || {};
-
-    return id === currentUserId || showPhone || sudo ? phone : null;
-
-  },
-
-  hasEmail: (source, args, ctx, info) => {
-
-    const {
-      email,
-    } = source;
-
-    return email ? true : false;
-
-  },
-
-  hasPhone: (source, args, ctx, info) => {
-
-    const {
-      phone,
-    } = source;
-
-    return phone ? true : false;
-
-  },
-
-  password: () => null,
-}
-
-
-const userGroups = function (source, args, ctx, info) {
-
-  const {
-    currentUser,
-  } = ctx;
-
-
-  const {
-    sudo,
-  } = currentUser || {};
-
-  return sudo ? ctx.db.query.userGroups({}, info) : [];
-
-}
 
 
 
@@ -868,8 +725,32 @@ export default class PrismaUserModule extends PrismaModule {
     this.mergeModules([
       UploadModule,
       ResetPasswordModule,
+      MailModule,
+      SmsModule,
     ]);
 
+
+    this.userPayloadData = {
+      data: (source, args, ctx, info) => {
+
+        const {
+          id,
+        } = source.data || {};
+
+        return id ? ctx.db.query.user({
+          where: {
+            id,
+          },
+        }, info) : null;
+      }
+    }
+
+  }
+
+
+  cleanUpPhone(phone) {
+
+    return cleanUpPhone(phone);
   }
 
 
@@ -935,19 +816,19 @@ export default class PrismaUserModule extends PrismaModule {
     return {
       Query: {
         ...Query,
-        users,
-        usersConnection,
-        user,
-        me,
-        userGroups,
+        users: this.users.bind(this),
+        usersConnection: this.usersConnection.bind(this),
+        user: this.user.bind(this),
+        me: this.me.bind(this),
+        userGroups: this.userGroups.bind(this),
       },
       Mutation: {
         ...Mutation,
-        signin,
-        signup,
-        createUserProcessor,
-        updateUserProcessor,
-        // resetPassword,
+        signin: this.signin.bind(this),
+        signup: this.signup.bind(this),
+        // createUserProcessor: this.createUserProcessor.bind(this),
+        updateUserProcessor: this.updateUserProcessor.bind(this),
+        resetPasswordProcessor: this.resetPasswordProcessor.bind(this),
       },
       Subscription: {
         user: {
@@ -957,10 +838,323 @@ export default class PrismaUserModule extends PrismaModule {
         },
       },
       ...other,
-      UserResponse: userPayloadData,
-      AuthPayload: userPayloadData,
-      User,
+      UserResponse: this.userPayloadData,
+      AuthPayload: this.userPayloadData,
+      User: this.getUserResolvers(),
     };
+  }
+
+
+  getProcessor(ctx) {
+    return new (this.getProcessorClass())(ctx);
+  }
+
+  getProcessorClass() {
+    return UserProcessor;
+  }
+
+
+
+  async signup(source, args, ctx, info) {
+
+    return this.getProcessor(ctx).signup(args, info);
+  }
+
+  async signin(source, args, ctx, info) {
+
+    return this.getProcessor(ctx).signin(args, info);
+  }
+
+  async updateUserProcessor(source, args, ctx, info) {
+
+    return this.getProcessor(ctx).updateWithResponse("User", args, info);
+  }
+
+
+  async createUserProcessor(source, args, ctx, info) {
+
+    return this.getProcessor(ctx).createWithResponse("User", args, info);
+  }
+
+
+  resetPasswordProcessor(source, args, ctx, info) {
+
+    return this.getProcessor(ctx).resetPasswordWithResponse(args, info);
+  }
+
+
+
+  prepareWhere(argsWhere, info) {
+
+
+    // Очищаем все аргументы
+    info.fieldNodes.map(n => {
+      n.arguments = []
+    });
+
+    let {
+      search,
+      ...where
+    } = argsWhere || {}
+
+    // let {
+    //   phone,
+    //   OR,
+    //   ...where
+    // } = argsWhere || {}
+
+    // if (phone) {
+
+    //   phone = cleanUpPhone(phone);
+
+    // }
+
+    // if (OR) {
+
+    //   let phoneField = OR.find(n => Object.keys(n).indexOf("phone") !== -1);
+
+
+    //   if (phoneField && phoneField.phone) {
+    //     phoneField.phone = cleanUpPhone(phoneField.phone);
+    //   }
+
+    // }
+
+    let AND = [];
+
+
+    if (search) {
+
+      const searchWhere = this.prepareSearch(search);
+
+      if (searchWhere) {
+        AND.push(searchWhere)
+      }
+    }
+
+
+    if (AND.length) {
+      where.AND = AND;
+    }
+
+
+    return where;
+
+  }
+
+  prepareSearch(search) {
+
+    search = search ? search.trim() : null;
+
+    if (search) {
+
+
+      let OR = [];
+
+      let phone = this.cleanUpPhone(search);
+
+      if (phone) {
+        OR.push({
+          phone_contains: phone,
+        });
+      }
+
+      OR.push({
+        id: search,
+      });
+
+      OR.push({
+        username_contains: search,
+      });
+
+      OR.push({
+        fullname_contains: search,
+      });
+
+      OR.push({
+        email_contains: search,
+      });
+
+
+      return {
+        OR,
+      }
+    }
+
+  }
+
+
+  usersConnection(parent, args, ctx, info) {
+
+    let {
+      where: argsWhere,
+    } = args
+
+
+    const where = this.prepareWhere(argsWhere, info);
+
+
+    Object.assign(args, {
+      where,
+      // where: {
+      //   ...where,
+      //   phone,
+      //   OR,
+      // },
+    });
+
+
+
+    return ctx.db.query.usersConnection(args, info);
+
+  }
+
+
+  users(parent, args, ctx, info) {
+
+
+    let {
+      where: argsWhere,
+    } = args
+
+
+    const where = this.prepareWhere(argsWhere, info);
+
+
+    Object.assign(args, {
+      where,
+      // where: {
+      //   ...where,
+      //   phone,
+      //   OR,
+      // },
+    });
+
+    return ctx.db.query.users(args, info);
+
+  }
+
+  user(parent, args, ctx, info) {
+
+
+    return ctx.db.query.user(args, info);
+  }
+
+
+  me(parent, args, ctx, info) {
+
+    const {
+      currentUser,
+      db,
+    } = ctx;
+
+    const {
+      id: currentUserId,
+    } = currentUser || {};
+
+    return currentUserId ? db.query.user({
+      where: {
+        id: currentUserId,
+      }
+    }, info) : null;
+  }
+
+
+
+
+
+  getUserResolvers() {
+
+    return {
+
+      LogedIns: (source, args, ctx, info) => {
+
+
+        const {
+          LogedIns,
+        } = source;
+
+        const {
+          sudo,
+        } = ctx.currentUser || {};
+
+
+        return sudo ? LogedIns : [];
+
+      },
+
+      email: (source, args, ctx, info) => {
+
+        const {
+          id,
+          email,
+          showEmail,
+        } = source;
+
+        const {
+          id: currentUserId,
+          sudo,
+        } = ctx.currentUser || {};
+
+        return (id === currentUserId) || showEmail || sudo ? email : null;
+
+      },
+
+      phone: (source, args, ctx, info) => {
+
+        const {
+          id,
+          phone,
+          showPhone,
+        } = source;
+
+        const {
+          id: currentUserId,
+          sudo,
+        } = ctx.currentUser || {};
+
+        return id === currentUserId || showPhone || sudo ? phone : null;
+
+      },
+
+      hasEmail: (source, args, ctx, info) => {
+
+        const {
+          email,
+        } = source;
+
+        return email ? true : false;
+
+      },
+
+      hasPhone: (source, args, ctx, info) => {
+
+        const {
+          phone,
+        } = source;
+
+        return phone ? true : false;
+
+      },
+
+      password: () => null,
+    }
+  }
+
+
+  userGroups(source, args, ctx, info) {
+
+    const {
+      currentUser,
+    } = ctx;
+
+
+    const {
+      sudo,
+    } = currentUser || {};
+
+    return sudo ? ctx.db.query.userGroups({}, info) : [];
+
   }
 
 

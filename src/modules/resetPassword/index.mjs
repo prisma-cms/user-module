@@ -18,21 +18,33 @@ class ResetPasswordProcessor extends PrismaProcessor {
 
     this.private = false;
 
+    this.allowSendResetPasswordCodeViaSms = true;
+
   }
 
 
   async create(objectType, args, info) {
 
+    const {
+      ctx,
+    } = this;
+
+
+    const {
+      db,
+    } = ctx;
 
     let {
       data: {
         code,
         password,
+        User,
         ...data
       },
       ...otherArgs
     } = args;
 
+    // console.log("args", args, User);
 
     code = code ? code : passwordGenerator.generate({
       length: 8,
@@ -46,22 +58,215 @@ class ResetPasswordProcessor extends PrismaProcessor {
       symbols: false,
     });
 
+
+    if (!User || !User.connect) {
+      return this.addError("Не указан пользователь");
+    }
+
+    const user = await db.query.user({
+      where: User.connect,
+    })
+      .catch(console.error);
+
+
+    if (!user) {
+      return this.addError("Не был получен пользователь");
+    }
+
+
     Object.assign(data, {
       code,
       password,
+      User,
     });
 
-    return super.create(objectType, {
+
+    const result = await super.create(objectType, {
       data,
       ...otherArgs,
     }, info);
 
+
+    /**
+     * Если был создан код, надо его отправить пользователю
+     */
+    if (result) {
+
+      const {
+        id: resetPasswordId,
+      } = result;
+
+      const sends = await this.sendResetPasswordCode(result, user);
+
+      /**
+       * Если данные не были отправлены никаким образом,
+       * удаляем запись и возвращаем ошибку
+       */
+      if (!sends.length) {
+
+        await db.mutation.deleteResetPassword({
+          where: {
+            id: resetPasswordId,
+          },
+        })
+          .catch(console.error);
+
+        this.addError("Не удалось отправить код. Попробуйте еще раз.");
+
+      }
+
+    }
+
+    return result;
   }
 
 
   async mutate(objectType, args, into) {
 
     return super.mutate(objectType, args);
+  }
+
+
+  async sendResetPasswordCode(resetPassword, user) {
+
+    let sends = [];
+
+
+    const sendedViaEmail = await this.sendResetPasswordCodeViaEmail(resetPassword, user);
+
+    if (sendedViaEmail) {
+      sends.push("email");
+    }
+
+    const sendedViaSms = await this.sendResetPasswordCodeViaSms(resetPassword, user);
+
+    if (sendedViaSms) {
+      sends.push("sms");
+    }
+
+    console.log("sends");
+
+    return sends;
+  }
+
+
+  async sendResetPasswordCodeViaEmail(resetPassword, user) {
+
+    const {
+      ctx: {
+        db,
+      },
+    } = this;
+
+
+    let result;
+
+    const {
+      id: userId,
+      email,
+    } = user;
+
+    if (email) {
+
+      const {
+        code,
+      } = resetPassword;
+
+
+      // Создаем новое сообщение
+      result = await db.mutation.createLetter({
+        data: {
+          email,
+          subject: "Код для сброса пароля",
+          message: `<h3>Кем-то был запрошен сброс пароля.</h3>
+          <p>
+            <strong>
+              Внимание! Если это были не вы, ничего не делайте. Никому не сообщайте эти данные.
+            </strong>
+          </p>
+          <p>
+            ID пользователя: ${userId}
+          </p>
+          <p>
+            Емейл: ${email}
+          </p>
+          <p>
+            Код для сброса: ${code}
+          </p>
+        `,
+        },
+      })
+        .catch(console.error);
+
+    }
+
+    return result;
+
+  }
+
+
+  async sendResetPasswordCodeViaSms(resetPassword, user) {
+
+    const {
+      ctx: {
+        db,
+      },
+      allowSendResetPasswordCodeViaSms,
+    } = this;
+
+
+    let result;
+
+    if (allowSendResetPasswordCodeViaSms) {
+
+      return;
+
+      const {
+        id: userId,
+        phone,
+      } = user;
+
+
+
+      if (phone) {
+
+        const {
+          code,
+        } = resetPassword;
+
+
+        // Создаем новое сообщение
+        result = await db.mutation.createLetter({
+          data: {
+            email,
+            subject: "Код для сброса пароля",
+            message: `<h3>Кем-то был запрошен сброс пароля.</h3>
+            <p>
+              <strong>
+                Внимание! Если это были не вы, ничего не делайте. Никому не сообщайте эти данные.
+              </strong>
+            </p>
+            <p>
+              ID пользователя: ${userId}
+            </p>
+            <p>
+              Емейл: ${email}
+            </p>
+            <p>
+              Код для сброса: ${code}
+            </p>
+          `,
+          },
+        })
+          .catch(console.error);
+
+      }
+
+    }
+
+
+    return result;
+
   }
 
 }
@@ -124,6 +329,11 @@ class Module extends PrismaModule {
         // },
       },
       ResetPasswordResponse: this.ResetPasswordResponse,
+      ResetPassword: {
+        code: () => null,
+        password: () => null,
+        User: () => null,
+      },
     }
 
   }

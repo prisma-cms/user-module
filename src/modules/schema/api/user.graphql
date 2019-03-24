@@ -24,4 +24,5 @@ input SigninDataInput {
 
 input UserWhereInput {
 	search: String
+	showHidden: Boolean
 }

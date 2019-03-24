@@ -950,8 +950,15 @@ export default class PrismaUserModule extends PrismaModule {
 
 
 
-  prepareWhere(argsWhere, info) {
+  prepareWhere(source, argsWhere, ctx, info) {
 
+    const {
+      currentUser,
+    } = ctx;
+
+    const {
+      sudo,
+    } = currentUser || {};
 
     // Очищаем все аргументы
     info.fieldNodes.map(n => {
@@ -960,6 +967,7 @@ export default class PrismaUserModule extends PrismaModule {
 
     let {
       search,
+      showHidden,
       ...where
     } = argsWhere || {}
 
@@ -988,6 +996,18 @@ export default class PrismaUserModule extends PrismaModule {
 
     let AND = [];
 
+    if (!sudo && !showHidden) {
+      AND.push({
+        OR: [
+          {
+            hidden: null
+          },
+          {
+            hidden: false
+          },
+        ],
+      });
+    }
 
     if (search) {
 
@@ -1050,14 +1070,14 @@ export default class PrismaUserModule extends PrismaModule {
   }
 
 
-  usersConnection(parent, args, ctx, info) {
+  usersConnection(source, args, ctx, info) {
 
     let {
       where: argsWhere,
     } = args
 
 
-    const where = this.prepareWhere(argsWhere, info);
+    const where = this.prepareWhere(source, argsWhere, ctx, info);
 
 
     Object.assign(args, {
@@ -1076,7 +1096,7 @@ export default class PrismaUserModule extends PrismaModule {
   }
 
 
-  users(parent, args, ctx, info) {
+  users(source, args, ctx, info) {
 
 
     let {
@@ -1084,7 +1104,7 @@ export default class PrismaUserModule extends PrismaModule {
     } = args
 
 
-    const where = this.prepareWhere(argsWhere, info);
+    const where = this.prepareWhere(source, argsWhere, ctx, info);
 
 
     Object.assign(args, {
@@ -1100,14 +1120,14 @@ export default class PrismaUserModule extends PrismaModule {
 
   }
 
-  user(parent, args, ctx, info) {
+  user(source, args, ctx, info) {
 
 
     return ctx.db.query.user(args, info);
   }
 
 
-  me(parent, args, ctx, info) {
+  me(source, args, ctx, info) {
 
     const {
       currentUser,

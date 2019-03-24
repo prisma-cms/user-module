@@ -34,6 +34,9 @@ type User{
 
   LogedIns: [LogedIn!]! @relation (name: "UserLogedIn")
   Files: [File!]! @relation(name: "UserFiles")
+
+  """Hide profile"""
+  hidden: Boolean @default(value: false)
 }
  
 

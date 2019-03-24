@@ -1,7 +1,7 @@
 {
   "name": "@prisma-cms/user-module",
   "description": "User module for @prisma-cms/server",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "main": "src/",
   "files": [
     "src"
@@ -19,8 +19,6 @@
   "dependencies": {
     "@prisma-cms/prisma-module": "latest",
     "@prisma-cms/upload-module": "latest",
-    "@prisma-cms/mail-module": "latest",
-    "@prisma-cms/sms-module": "latest",
     "bcryptjs": "^2.4.3",
     "chalk": "^2.4.1",
     "expect": "^23.6.0",
@@ -31,6 +29,10 @@
   },
   "devDependencies": {
     "@prisma-cms/server": "latest",
+    "@prisma-cms/mail-module": "latest",
+    "@prisma-cms/sms-module": "latest",
+    "@prisma-cms/user-module": "latest",
+    "@prisma-cms/log-module": "latest",
     "expect": "^23.6.0",
     "graphql": "*",
     "mocha": "^5.2.0",

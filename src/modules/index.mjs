@@ -8,6 +8,7 @@ import PrismaModule from "@prisma-cms/prisma-module";
 import UploadModule from "@prisma-cms/upload-module";
 import MailModule from "@prisma-cms/mail-module";
 import SmsModule from "@prisma-cms/sms-module";
+import LogModule from "@prisma-cms/log-module";
 
 import isemail from "isemail";
 
@@ -24,6 +25,8 @@ import path from 'path';
 import fs from 'fs';
 
 import ResetPasswordModule from "./resetPassword";
+
+import moment from "moment";
 
 const moduleURL = new URL(import.meta.url);
 
@@ -640,7 +643,29 @@ export class UserProcessor extends Processor {
           }
         } = passwordReset;
 
-        if (passwordResetCode !== code) {
+
+        /**
+         * Проверяем срок действия пароля
+         */
+
+        // console.log(chalk.green("validTill"), moment(validTill).format(), moment().format(), moment(validTill) < moment());
+
+        if (!validTill || moment(validTill) < moment()) {
+          this.addFieldError("code", "закончился срок действия кода");
+
+          /**
+           * Удаляем старый код
+           */
+          await db.mutation.deleteResetPassword({
+            where: {
+              id: passwordResetId,
+            },
+          })
+            .catch(console.error)
+
+        }
+
+        else if (passwordResetCode !== code) {
           this.addFieldError("code", "Неправильный код");
         }
         else {
@@ -727,6 +752,7 @@ export default class PrismaUserModule extends PrismaModule {
       ResetPasswordModule,
       MailModule,
       SmsModule,
+      LogModule,
     ]);
 
 
@@ -744,6 +770,8 @@ export default class PrismaUserModule extends PrismaModule {
         }, info) : null;
       }
     }
+
+    this.resetCodeQueue = {}
 
   }
 
@@ -879,7 +907,45 @@ export default class PrismaUserModule extends PrismaModule {
 
   resetPasswordProcessor(source, args, ctx, info) {
 
-    return this.getProcessor(ctx).resetPasswordWithResponse(args, info);
+
+    const {
+      where: {
+        id: userId,
+      },
+    } = args;
+
+
+    if (!userId) {
+      throw new Error("userId is empty");
+    }
+
+
+    /**
+     * Проверка, чтобы на одного пользователя не сыпалось 100500 запросов на смену пользователя.
+     * Защита от перебора
+     */
+    if (this.resetCodeQueue[userId]) {
+      throw new Error("Already in progress");
+    }
+
+    this.resetCodeQueue[userId] = true;
+
+    // return;
+
+    return new Promise((resolve, reject) => {
+
+      setTimeout(() => {
+
+        this.getProcessor(ctx).resetPasswordWithResponse(args, info)
+          .then(resolve)
+          .catch(reject);
+
+        delete this.resetCodeQueue[userId];
+
+      }, 3000);
+
+    });
+
   }
 
 

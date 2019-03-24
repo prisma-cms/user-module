@@ -7,6 +7,12 @@ import chalk from "chalk";
 
 import passwordGenerator from "generate-password";
 
+import {
+  SmsMessageProcessor,
+} from "@prisma-cms/sms-module";
+
+import moment from "moment";
+
 class ResetPasswordProcessor extends PrismaProcessor {
 
 
@@ -39,20 +45,24 @@ class ResetPasswordProcessor extends PrismaProcessor {
         code,
         password,
         User,
+        validTill,
         ...data
       },
       ...otherArgs
     } = args;
 
-    // console.log("args", args, User);
+
+    validTill = moment().add(1, "H");
+
 
     code = code ? code : passwordGenerator.generate({
-      length: 8,
+      length: 6,
+      uppercase: false,
       numbers: true,
     });
 
     password = password ? password : passwordGenerator.generate({
-      length: 8,
+      length: 6,
       numbers: true,
       uppercase: false,
       symbols: false,
@@ -78,6 +88,7 @@ class ResetPasswordProcessor extends PrismaProcessor {
       code,
       password,
       User,
+      validTill,
     });
 
 
@@ -144,7 +155,7 @@ class ResetPasswordProcessor extends PrismaProcessor {
       sends.push("sms");
     }
 
-    console.log("sends");
+    // console.log("sends");
 
     return sends;
   }
@@ -208,24 +219,24 @@ class ResetPasswordProcessor extends PrismaProcessor {
   async sendResetPasswordCodeViaSms(resetPassword, user) {
 
     const {
-      ctx: {
-        db,
-      },
+      ctx,
       allowSendResetPasswordCodeViaSms,
     } = this;
+
+    const {
+      db,
+    } = ctx;
 
 
     let result;
 
     if (allowSendResetPasswordCodeViaSms) {
 
-      return;
 
       const {
         id: userId,
         phone,
       } = user;
-
 
 
       if (phone) {
@@ -235,32 +246,30 @@ class ResetPasswordProcessor extends PrismaProcessor {
         } = resetPassword;
 
 
-        // Создаем новое сообщение
-        result = await db.mutation.createLetter({
+        const smsProcessor = new SmsMessageProcessor(ctx);
+
+        let smsArgs = {
           data: {
-            email,
-            subject: "Код для сброса пароля",
-            message: `<h3>Кем-то был запрошен сброс пароля.</h3>
-            <p>
-              <strong>
-                Внимание! Если это были не вы, ничего не делайте. Никому не сообщайте эти данные.
-              </strong>
-            </p>
-            <p>
-              ID пользователя: ${userId}
-            </p>
-            <p>
-              Емейл: ${email}
-            </p>
-            <p>
-              Код для сброса: ${code}
-            </p>
-          `,
+            from: "mamba.zone",
+            text: `Код для сброса пароля: ${code}`,
+            recipients: {
+              set: [phone],
+            },
+            Provider: {
+              connect: {
+                name: "LetsAds",
+              },
+            }
           },
-        })
+        }
+
+        result = await smsProcessor.createAndSendSms("SmsMessage", smsArgs)
           .catch(console.error);
 
+
       }
+
+
 
     }
 

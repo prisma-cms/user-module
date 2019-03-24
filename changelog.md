@@ -1,3 +1,7 @@
+1.3.1
+===============================
+- Added resetPassword delay
+
 1.3.0
 ===============================
 - Added users::prepareSearch()

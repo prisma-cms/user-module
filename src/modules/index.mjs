@@ -390,7 +390,6 @@ export class UserProcessor extends Processor {
         password,
         sudo,
         Groups,
-        birthday,
         ...data
       },
       where = {},

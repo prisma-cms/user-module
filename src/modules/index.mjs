@@ -968,33 +968,19 @@ export default class PrismaUserModule extends PrismaModule {
     let {
       search,
       showHidden,
-      ...where
+      ...otherWhere
     } = argsWhere || {}
 
-    // let {
-    //   phone,
-    //   OR,
-    //   ...where
-    // } = argsWhere || {}
+    // console.log(chalk.green("otherWhere"), otherWhere);
 
-    // if (phone) {
+    let where = {};
 
-    //   phone = cleanUpPhone(phone);
-
-    // }
-
-    // if (OR) {
-
-    //   let phoneField = OR.find(n => Object.keys(n).indexOf("phone") !== -1);
-
-
-    //   if (phoneField && phoneField.phone) {
-    //     phoneField.phone = cleanUpPhone(phoneField.phone);
-    //   }
-
-    // }
 
     let AND = [];
+
+    if (otherWhere && Object.keys(otherWhere).length) {
+      AND.push(otherWhere);
+    }
 
     if (!sudo && !showHidden) {
       AND.push({
@@ -1023,6 +1009,11 @@ export default class PrismaUserModule extends PrismaModule {
       where.AND = AND;
     }
 
+    // console.log(chalk.green("where AND"), AND);
+
+    // AND.map(n => {
+    //   console.log(chalk.green("where AND n "), n);
+    // });
 
     return where;
 
@@ -1079,6 +1070,7 @@ export default class PrismaUserModule extends PrismaModule {
 
     const where = this.prepareWhere(source, argsWhere, ctx, info);
 
+    console.log(chalk.green("where"), where);
 
     Object.assign(args, {
       where,

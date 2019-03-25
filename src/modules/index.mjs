@@ -314,9 +314,9 @@ export class UserProcessor extends Processor {
     }
 
 
-    if (!fullname) {
-      this.addFieldError("fullname", "Укажите ФИО");
-    }
+    // if (!fullname) {
+    //   this.addFieldError("fullname", "Укажите ФИО");
+    // }
 
 
     if (password === undefined) {
@@ -503,7 +503,7 @@ export class UserProcessor extends Processor {
 
 
     if (phone) {
-      phone = cleanUpPhone(phone);
+      phone = this.cleanUpPhone(phone);
     }
 
     if (email !== undefined) {
@@ -853,7 +853,7 @@ export default class PrismaUserModule extends PrismaModule {
         ...Mutation,
         signin: this.signin.bind(this),
         signup: this.signup.bind(this),
-        // createUserProcessor: this.createUserProcessor.bind(this),
+        createUserProcessor: this.createUserProcessor.bind(this),
         updateUserProcessor: this.updateUserProcessor.bind(this),
         resetPasswordProcessor: this.resetPasswordProcessor.bind(this),
       },
@@ -1069,7 +1069,7 @@ export default class PrismaUserModule extends PrismaModule {
 
     const where = this.prepareWhere(source, argsWhere, ctx, info);
 
-    console.log(chalk.green("where"), where);
+    // console.log(chalk.green("where"), where);
 
     Object.assign(args, {
       where,

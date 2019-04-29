@@ -829,18 +829,16 @@ export default class PrismaUserModule extends PrismaModule {
   getResolvers() {
 
 
-    const resolvers = super.getResolvers();
-
-
     const {
       Query,
       Mutation,
       Subscription,
+      User,
       ...other
-    } = resolvers || {}
+    } = super.getResolvers();
 
 
-    return {
+    const resolvers = {
       Query: {
         ...Query,
         users: this.users.bind(this),
@@ -867,8 +865,17 @@ export default class PrismaUserModule extends PrismaModule {
       ...other,
       UserResponse: this.userPayloadData,
       AuthPayload: this.userPayloadData,
-      User: this.getUserResolvers(),
+      User: {
+        ...User,
+        ...this.getUserResolvers(),
+      },
     };
+
+
+    // console.log("resolvers 4 User", resolvers.User);
+
+    return resolvers;
+
   }
 
 

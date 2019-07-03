@@ -684,6 +684,12 @@ export class UserProcessor extends Processor {
   }
 
 
+  cleanUpPhone(phone) {
+
+    return cleanUpPhone(phone);
+  }
+
+
   async resetPassword(passwordReset) {
 
     const {

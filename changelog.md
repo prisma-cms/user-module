@@ -1,6 +1,11 @@
+1.3.8
+===============================
+- Added createToken()
+- Added generatePassword()
+
 1.3.7
 ===============================
-Fix UserModule::cleanUpPhone()
+- Fix UserModule::cleanUpPhone()
 
 1.3.6
 ===============================

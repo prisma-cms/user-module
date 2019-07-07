@@ -97,6 +97,19 @@ export class UserProcessor extends Processor {
   }
 
 
+  async generatePassword() {
+
+    return await shortid.generate();
+  }
+
+
+  createToken(user) {
+
+    return jwt.sign({ userId: user.id }, process.env.APP_SECRET);
+
+  }
+
+
   async signin(args, info) {
 
     const {
@@ -135,7 +148,7 @@ export class UserProcessor extends Processor {
     if (!this.hasErrors()) {
       this.data = user;
 
-      token = jwt.sign({ userId: user.id }, process.env.APP_SECRET);
+      token = this.createToken(user);
     }
 
 
@@ -152,7 +165,8 @@ export class UserProcessor extends Processor {
         where: {
           id: user.id,
         },
-      });
+      })
+        .catch(console.error);
     }
 
     return {
@@ -320,7 +334,7 @@ export class UserProcessor extends Processor {
 
 
     if (password === undefined) {
-      password = await createPassword(await shortid.generate());
+      password = await this.createPassword(this.generatePassword());
     }
     else if (!password) {
       this.addFieldError("password", "Пароль не может быть пустым");
@@ -496,6 +510,7 @@ export class UserProcessor extends Processor {
       data: {
         phone,
         email,
+        username,
         ...data
       },
       ...otherArgs
@@ -510,10 +525,15 @@ export class UserProcessor extends Processor {
       email = email && email.trim("").toLowerCase() || null;
     }
 
+    if (username !== undefined) {
+      username = username && username.trim("") || null;
+    }
+
     data = {
       ...data,
       phone,
       email,
+      username,
     }
 
     return super.mutate(method, {

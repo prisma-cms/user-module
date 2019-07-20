@@ -4,7 +4,7 @@ type User{
   createdAt: DateTime!
   updatedAt: DateTime!
   username: String @unique
-  email: String @unique
+  email: String
   phone: String 
 
   showEmail: Boolean @default(value: false)

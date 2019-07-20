@@ -205,6 +205,11 @@ export class UserProcessor extends Processor {
     }
 
 
+    if (username !== undefined) {
+      username = username ? username.trim() : null;
+    }
+
+
     if (!username) {
       // this.addFieldError("username", "Укажите логин");
     }
@@ -219,6 +224,11 @@ export class UserProcessor extends Processor {
     })) {
       // throw ("Пользователь с таким логином уже зарегистрирован");
       this.addFieldError("username", "Username already exists");
+    }
+
+
+    if (email !== undefined) {
+      email = email ? email.trim() : null;
     }
 
     // Проверяем есть ли пользователь с таким емейлом
@@ -426,6 +436,7 @@ export class UserProcessor extends Processor {
 
     const {
       db,
+      // currentUser,
     } = this.ctx;
 
 
@@ -436,7 +447,12 @@ export class UserProcessor extends Processor {
     }
 
 
-    const currentUser = await this.getUser();
+    const currentUser = await this.getUser(true);
+
+    const {
+      id: currentUserId,
+      sudo: isSudo,
+    } = currentUser || {};
 
 
     if (!this.hasErrors()) {
@@ -457,7 +473,7 @@ export class UserProcessor extends Processor {
       }
       else {
 
-        if (currentUser.sudo === true) {
+        if (isSudo === true) {
 
           Object.assign(data, {
             sudo,
@@ -470,7 +486,7 @@ export class UserProcessor extends Processor {
           /**
            * Если обновляемый пользователь не текущий, то проверяем права это делать
            */
-          if (user.id !== currentUser.id) {
+          if (user.id !== currentUserId) {
 
             this.addError("Нет прав");
 

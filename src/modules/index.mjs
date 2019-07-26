@@ -89,6 +89,8 @@ export class UserProcessor extends Processor {
 
     this.objectType = "User";
 
+    this.useUniqueEmails = true;
+
   }
 
 
@@ -191,6 +193,7 @@ export class UserProcessor extends Processor {
 
     const {
       ctx,
+      useUniqueEmails,
     } = this;
 
     const {
@@ -240,14 +243,22 @@ export class UserProcessor extends Processor {
       this.addFieldError("email", "Please, type correct email");
 
     }
-    else if (await db.query.user({
-      where: {
-        email,
-      },
-    })) {
-      // throw ("Пользователь с таким емейлом уже зарегистрирован");
-      this.addFieldError("email", "Email already exists");
+    else if (useUniqueEmails) {
+
+      const users = await db.query.users({
+        first: 1,
+        where: {
+          email,
+        },
+      });
+
+      if (users && users.length) {
+        // throw ("Пользователь с таким емейлом уже зарегистрирован");
+        this.addFieldError("email", "Email already exists");
+      }
+
     }
+
 
 
     if (!this.hasErrors()) {
@@ -344,7 +355,7 @@ export class UserProcessor extends Processor {
 
 
     if (password === undefined) {
-      password = await this.createPassword(this.generatePassword());
+      password = await this.createPassword(await this.generatePassword());
     }
     else if (!password) {
       this.addFieldError("password", "Пароль не может быть пустым");

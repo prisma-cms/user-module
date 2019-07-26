@@ -1,3 +1,8 @@
+1.3.10
+===============================
+- Fix createUser
+- Fix signup check email
+
 1.3.9
 ===============================
 - Fix updateUser

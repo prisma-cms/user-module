@@ -5,7 +5,7 @@ import Processor from "@prisma-cms/prisma-processor";
 import shortid from "shortid";
 
 import PrismaModule from "@prisma-cms/prisma-module";
-import UploadModule from "@prisma-cms/upload-module";
+// import UploadModule from "@prisma-cms/upload-module";
 import MailModule from "@prisma-cms/mail-module";
 import SmsModule from "@prisma-cms/sms-module";
 import LogModule from "@prisma-cms/log-module";
@@ -800,7 +800,7 @@ export default class PrismaUserModule extends PrismaModule {
     super(options);
 
     this.mergeModules([
-      UploadModule,
+      // UploadModule,
       ResetPasswordModule,
       MailModule,
       SmsModule,

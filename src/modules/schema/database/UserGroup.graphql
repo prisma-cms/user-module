@@ -1,0 +1,9 @@
+
+type UserGroup {
+  id: ID! @unique @id
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+  name: String! @unique
+  Users: [User!]! @relation(name: "UserGroups")
+  # Permissions: [Permission!]! @relation(name: "GroupPermissions")
+}

@@ -1,0 +1,7 @@
+
+type LogedIn {
+  id: ID! @unique @id
+  createdAt: DateTime! @createdAt
+  fake: Boolean @default(value: true)
+  User: User! @relation (name: "UserLogedIn")
+}

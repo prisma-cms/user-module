@@ -1,4 +1,4 @@
 type File {
-  id: ID! @unique
+  id: ID! @unique @id
   CreatedBy: User! @relation(name: "UserFiles")
 }

@@ -807,6 +807,7 @@ export default class PrismaUserModule extends PrismaModule {
       LogModule,
     ]);
 
+    this.injectWhereSearch = this.injectWhereSearch.bind(this);
 
     this.userPayloadData = {
       data: (source, args, ctx, info) => {
@@ -1020,12 +1021,12 @@ export default class PrismaUserModule extends PrismaModule {
     } = currentUser || {};
 
     // Очищаем все аргументы
-    info.fieldNodes.map(n => {
-      n.arguments = []
-    });
+    // info.fieldNodes.map(n => {
+    //   n.arguments = []
+    // });
 
     let {
-      search,
+      // search,
       showHidden,
       ...otherWhere
     } = argsWhere || {}
@@ -1054,14 +1055,14 @@ export default class PrismaUserModule extends PrismaModule {
       });
     }
 
-    if (search) {
+    // if (search) {
 
-      const searchWhere = this.prepareSearch(search);
+    //   const searchWhere = this.prepareSearch(search);
 
-      if (searchWhere) {
-        AND.push(searchWhere)
-      }
-    }
+    //   if (searchWhere) {
+    //     AND.push(searchWhere)
+    //   }
+    // }
 
 
     if (AND.length) {
@@ -1120,7 +1121,75 @@ export default class PrismaUserModule extends PrismaModule {
   }
 
 
-  usersConnection(source, args, ctx, info) {
+
+
+  injectWhereSearch(source, args, ctx, info, where) {
+
+    // console.log('injectWhereSearch', where);
+
+    let {
+      search,
+      ...other
+    } = where || {};
+
+
+    let condition;
+
+
+    if (search !== undefined) {
+
+      delete where.search;
+
+      search = this.prepareSearch(search);
+
+      if (search) {
+
+        condition = search;
+
+      }
+
+    }
+
+
+    if (condition) {
+
+      // console.log('condition', JSON.stringify(where, true, 2));
+      // console.log('Object.keys(where)', Object.keys(where).length, Object.keys(where));
+
+      /**
+       * Если объект условия пустой, то во избежание лишней вложенности
+       * присваиваем ему полученное условие
+       */
+      if (!Object.keys(where).length) {
+
+        Object.assign(where, condition);
+
+      }
+
+      /**
+       * Иначе нам надо добавить полученное условие в массив AND,
+       * чтобы объединить с другими условиями
+       */
+      else {
+
+        if (!where.AND) {
+
+          where.AND = [];
+
+        }
+
+        where.AND.push(condition);
+
+      }
+
+    }
+
+    return where;
+
+  }
+
+
+  prepareUsersWhere(source, args, ctx, info) {
 
     let {
       where: argsWhere,
@@ -1129,7 +1198,7 @@ export default class PrismaUserModule extends PrismaModule {
 
     const where = this.prepareWhere(source, argsWhere, ctx, info);
 
-    // console.log(chalk.green("where"), where);
+    // console.log(chalk.green("where"), JSON.stringify(where, true, 2));
 
     Object.assign(args, {
       where,
@@ -1140,7 +1209,20 @@ export default class PrismaUserModule extends PrismaModule {
       // },
     });
 
+    const {
+      modifyArgs,
+    } = ctx;
 
+    modifyArgs(source, args, ctx, info, this.injectWhereSearch);
+
+    // console.log('args', JSON.stringify(args, true, 2));
+
+  }
+
+
+  usersConnection(source, args, ctx, info) {
+
+    this.prepareUsersWhere(source, args, ctx, info);
 
     return ctx.db.query.usersConnection(args, info);
 
@@ -1149,23 +1231,7 @@ export default class PrismaUserModule extends PrismaModule {
 
   users(source, args, ctx, info) {
 
-
-    let {
-      where: argsWhere,
-    } = args
-
-
-    const where = this.prepareWhere(source, argsWhere, ctx, info);
-
-
-    Object.assign(args, {
-      where,
-      // where: {
-      //   ...where,
-      //   phone,
-      //   OR,
-      // },
-    });
+    this.prepareUsersWhere(source, args, ctx, info);
 
     return ctx.db.query.users(args, info);
 

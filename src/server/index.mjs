@@ -1,6 +1,6 @@
 
 import startServer, {
-  modifyArgs,
+  // modifyArgs,
 } from "@prisma-cms/server";
 
 import PrismaUserModule from "../";
@@ -16,6 +16,6 @@ startServer({
   typeDefs: 'src/schema/generated/api.graphql',
   resolvers,
   contextOptions: {
-    modifyArgs,
+    // modifyArgs,
   },
 });

@@ -30,10 +30,10 @@ type User{
   Groups: [UserGroup!]! @relation(name: "UserGroups")
 
   CreatedUsers: [User!]! @relation(name: "UserCreatedBy", onDelete: SET_NULL)
-  CreatedBy: User @relation(name: "UserCreatedBy", onDelete: SET_NULL) 
+  CreatedBy: User @relation(name: "UserCreatedBy") 
 
-  LogedIns: [LogedIn!]! @relation (name: "UserLogedIn")
-  Files: [File!]! @relation(name: "UserFiles")
+  LogedIns: [LogedIn!]! @relation (name: "UserLogedIn" onDelete: CASCADE)
+  Files: [File!]! @relation(name: "UserFiles" onDelete: SET_NULL)
 
   """Hide profile"""
   hidden: Boolean @default(value: false)

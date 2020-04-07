@@ -1,4 +1,7 @@
 
+import {
+  modifyArgs as modifyArgsDefault,
+} from "@prisma-cms/server";
 
 import Processor from "@prisma-cms/prisma-processor";
 
@@ -258,7 +261,6 @@ export class UserProcessor extends Processor {
       }
 
     }
-
 
 
     if (!this.hasErrors()) {
@@ -1209,16 +1211,21 @@ export default class PrismaUserModule extends PrismaModule {
       // },
     });
 
-    const {
-      modifyArgs,
-    } = ctx;
+    this.modifyArgs(source, args, ctx, info, this.injectWhereSearch);
 
-    modifyArgs(source, args, ctx, info, this.injectWhereSearch);
 
     // console.log('args', JSON.stringify(args, true, 2));
 
   }
 
+  modifyArgs(source, args, ctx, info, modifier) {
+
+    const {
+      modifyArgs = modifyArgsDefault,
+    } = ctx;
+
+    return modifyArgs(source, args, ctx, info, modifier);
+  }
 
   usersConnection(source, args, ctx, info) {
 

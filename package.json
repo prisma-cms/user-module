@@ -1,7 +1,7 @@
 {
   "name": "@prisma-cms/user-module",
   "description": "User module for @prisma-cms/server",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "main": "src/",
   "files": [
     "src"
@@ -33,12 +33,12 @@
     "@prisma-cms/sms-module": "latest",
     "@prisma-cms/user-module": "latest",
     "expect": "^23.6.0",
-    "graphql": "*",
+    "graphql": "^14.0.2",
     "mocha": "^5.2.0",
     "nodemon": "latest"
   },
   "resolutions": {
-    "graphql": "*"
+    "graphql": "^14.0.2"
   },
   "author": "Fi1osof",
   "license": "MIT",

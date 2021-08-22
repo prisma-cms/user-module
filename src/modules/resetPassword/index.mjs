@@ -250,7 +250,7 @@ class ResetPasswordProcessor extends PrismaProcessor {
 
         let smsArgs = {
           data: {
-            from: "mamba.zone",
+            // from: "",
             text: `Код для сброса пароля: ${code}`,
             recipients: {
               set: [phone],
